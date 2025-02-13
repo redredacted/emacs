@@ -1,0 +1,26 @@
+* First Heading
+Here is *some* _content_ /ital/ ital
+
+Here is the [[https://orgmode.org][Org Mode homepage]]
+| Name   | Age | Uses Emacs |
+| Kenny  | 27  | YES        |
+| Andrew | IDK | NO         |
+
+- [ ] First Item
+- Second Item
+- Third Item
+
+** Sub-Heading
+*** hello and stuff from kenny
+**** Why hello their
+***** indeed hello
+****** i like pizza
+nothing to see here
+* TODO Inserted Heading
+
+#+begin_src emacs-lisp
+  (defun my-elisp-func ()
+    (messages "Hello!"))
+#+end_src
+* Second Heading
+hello second heading I am second content
