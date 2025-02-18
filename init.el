@@ -421,8 +421,16 @@
   :config
   (setq typescript-indent-level 2))
 
+(use-package lsp-java
+  :hook (java-mode . lsp-deferred)
+  :config
+  (require 'lsp-java-boot)
+  ;; to enable the lenses
+  (add-hook 'lsp-mode-hook #'lsp-lens-mode)
+  (add-hook 'java-mode-hook #'lsp-java-boot-lens-mode)
+  (add-hook 'java-mode-hook 'lsp))
+
 (use-package rust-mode
-  :ensure t
   :mode "\\.rs\\'"
   :hook (rust-mode . lsp-deferred)
   :config
@@ -451,7 +459,7 @@
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  '(package-selected-packages
-   '(rust-mode which-key visual-fill-column typescript-mode rainbow-delimiters org-bullets ob-typescript ob-sql-mode ob-rust ob-go magit lsp-ui lsp-treemacs lsp-ivy ivy-rich helpful general evil-nerd-commenter evil-collection editorconfig doom-themes doom-modeline counsel-projectile company-box command-log-mode all-the-icons))
+   '(lsp-java rust-mode which-key visual-fill-column typescript-mode rainbow-delimiters org-bullets ob-typescript ob-sql-mode ob-rust ob-go magit lsp-ui lsp-treemacs lsp-ivy ivy-rich helpful general evil-nerd-commenter evil-collection editorconfig doom-themes doom-modeline counsel-projectile company-box command-log-mode all-the-icons))
  '(safe-local-variable-values
    '((etags-regen-ignores "test/manual/etags/")
      (etags-regen-regexp-alist
