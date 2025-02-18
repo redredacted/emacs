@@ -428,7 +428,14 @@
   ;; to enable the lenses
   (add-hook 'lsp-mode-hook #'lsp-lens-mode)
   (add-hook 'java-mode-hook #'lsp-java-boot-lens-mode)
-  (add-hook 'java-mode-hook 'lsp))
+  (add-hook 'java-mode-hook 'lsp)
+
+  (setq lsp-java-vmargs
+        `("-noverify"
+          "-Xmx2G"
+          "-XX:+UseG1GC"
+          "-XX:+UseStringDeduplication"
+          ,(concat "-javaagent:" (expand-file-name "~/.m2/repository/org/projectlombok/lombok/1.18.32/lombok.1.18.32.jar")))))
 
 (use-package rust-mode
   :mode "\\.rs\\'"
