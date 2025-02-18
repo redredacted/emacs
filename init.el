@@ -1,5 +1,6 @@
 ;; You will most likely need to adjust this font size for your system!
 (defvar runemacs/default-font-size 180)
+(defvar efs/default-variable-font-size 180)
 
 (setq inhibit-startup-message t)
 
@@ -47,6 +48,7 @@
 (dolist (mode '(org-mode-hook
                 term-mode-hook
                 shell-mode-hook
+		treemacs-mode-hook
                 eshell-mode-hook))
   (add-hook mode (lambda () (display-line-numbers-mode 0))))
 
@@ -355,3 +357,109 @@
 
 (use-package visual-fill-column
   :hook (org-mode . efs/org-mode-visual-fill))
+
+(use-package ob-rust)
+(use-package ob-go)
+(use-package ob-sql-mode)
+(use-package ob-typescript)
+
+(org-babel-do-load-languages
+  'org-babel-load-languages
+  '((emacs-lisp . t)
+    (python . t)
+    (C . t)
+    (sql . t)
+    (latex . t)
+    (typescript . t)
+    (shell . t)
+    (rust . t)
+    (go . t)
+    (java . t)))
+
+(push '("conf-unix" . conf-unix) org-src-lang-modes)
+
+;; This is needed as of Org 9.2
+(require 'org-tempo)
+
+(add-to-list 'org-structure-template-alist '("sh" . "src shell"))
+(setq org-babel-rust-command "~/.cargo/bin/rust-script")
+(add-to-list 'org-structure-template-alist '("rs" . "src rust"))
+(add-to-list 'org-structure-template-alist '("cs" . "src C"))
+(add-to-list 'org-structure-template-alist '("go" . "src go"))
+(add-to-list 'org-structure-template-alist '("ja" . "src java"))
+(add-to-list 'org-structure-template-alist '("ts" . "src typescript"))
+(add-to-list 'org-structure-template-alist '("sq" . "src sql"))
+(add-to-list 'org-structure-template-alist '("la" . "src latex"))
+(add-to-list 'org-structure-template-alist '("el" . "src emacs-lisp"))
+(add-to-list 'org-structure-template-alist '("py" . "src python"))
+
+(defun efs/lsp-mode-setup ()
+  (setq lsp-headerline-breadcrumb-segments '(path-up-to-project file symbols))
+  (lsp-headerline-breadcrumb-mode))
+
+(use-package lsp-mode
+  :commands (lsp lsp-deferred)
+  :hook (lsp-mode . efs/lsp-mode-setup)
+  :init
+  (setq lsp-keymap-prefix "C-c l")  ;; Or 'C-l', 's-l'
+  :config
+  (lsp-enable-which-key-integration t))
+
+(use-package lsp-ui
+  :hook (lsp-mode . lsp-ui-mode)
+  :custom
+  (lsp-ui-doc-position 'bottom))
+
+(use-package lsp-treemacs
+  :after lsp)
+
+(use-package lsp-ivy)
+
+(use-package typescript-mode
+  :mode "\\.ts\\'"
+  :hook (typescript-mode . lsp-deferred)
+  :config
+  (setq typescript-indent-level 2))
+
+(use-package rust-mode
+  :ensure t
+  :mode "\\.rs\\'"
+  :hook (rust-mode . lsp-deferred)
+  :config
+  (setq rust-format-on-save t))  ;; Auto-format Rust on save
+
+(use-package company
+  :after lsp-mode
+  :hook (lsp-mode . company-mode)
+  :bind (:map company-active-map
+         ("<tab>" . company-complete-selection))
+        (:map lsp-mode-map
+         ("<tab>" . company-indent-or-complete-common))
+  :custom
+  (company-minimum-prefix-length 1)
+  (company-idle-delay 0.0))
+
+(use-package company-box
+  :hook (company-mode . company-box-mode))
+
+(use-package evil-nerd-commenter
+  :bind ("M-/" . evilnc-comment-or-uncomment-lines))
+
+(custom-set-variables
+ ;; custom-set-variables was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(package-selected-packages
+   '(rust-mode which-key visual-fill-column typescript-mode rainbow-delimiters org-bullets ob-typescript ob-sql-mode ob-rust ob-go magit lsp-ui lsp-treemacs lsp-ivy ivy-rich helpful general evil-nerd-commenter evil-collection editorconfig doom-themes doom-modeline counsel-projectile company-box command-log-mode all-the-icons))
+ '(safe-local-variable-values
+   '((etags-regen-ignores "test/manual/etags/")
+     (etags-regen-regexp-alist
+      (("c" "objc")
+       "/[ \11]*DEFVAR_[A-Z_ \11(]+\"\\([^\"]+\\)\"/\\1/" "/[ \11]*DEFVAR_[A-Z_ \11(]+\"[^\"]+\",[ \11]\\([A-Za-z0-9_]+\\)/\\1/")))))
+(custom-set-faces
+ ;; custom-set-faces was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ )
