@@ -8,3 +8,6 @@
 /autosaves/
 /.cache/
 /.lsp-session-v1
+/.dap-breakpoints
+/eshell/
+/request/
