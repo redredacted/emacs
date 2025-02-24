@@ -11,3 +11,5 @@
 /.dap-breakpoints
 /eshell/
 /request/
+/eln-cache/
+/.last-package-update-day
