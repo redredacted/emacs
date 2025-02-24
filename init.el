@@ -287,7 +287,6 @@
   (setq org-log-done 'time)
   (setq org-log-into-drawer t)
 
-  ; TODO: Change this to ~/org or something similair in future
   (setq org-agenda-files
 	'("~/Projects/OrgFiles/Tasks.org"
 	  "~/Projects/OrgFiles/Birthdays.org"
@@ -401,6 +400,28 @@
   
   (efs/org-font-setup))
 
+(use-package org-roam
+  :after org
+  :init
+  (setq org-roam-directory (file-truename "~/Projects/OrgFiles/RoamNotes"))  ;; Change this path if needed
+  (setq org-roam-db-location (expand-file-name "org-roam.db" user-emacs-directory))
+  :custom
+  (org-roam-completion-everywhere t)
+  :bind (("C-c n f" . org-roam-node-find)     ;; Find a note
+	 ("C-c n l" . org-roam-buffer-toggle)     ;; Find a note
+         ("C-c n i" . org-roam-node-insert))   ;; Insert a note link
+         ;; ("C-c n t" . org-roam-dailies-capture-today) ;; Capture a daily note
+         ;; ("C-c n d" . org-roam-dailies-goto-today))   ;; Go to today's daily note
+  :config
+  (org-roam-db-autosync-mode))
+
+(use-package org-roam-ui
+  :after org-roam
+  :config
+  (setq org-roam-ui-sync-theme t
+        org-roam-ui-follow t
+        org-roam-ui-update-on-save t
+        org-roam-ui-open-on-start nil))
 
 (use-package org-bullets
   :after org
@@ -635,3 +656,26 @@
     "H" 'dired-hide-dotfiles-mode))
 
 (setq gc-cons-threshold (* 2 1000 1000))
+(custom-set-variables
+ ;; custom-set-variables was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(package-selected-packages
+   '(all-the-icons-dired auto-package-update command-log-mode company-box
+			 counsel-projectile dired-hide-dotfiles
+			 dired-open doom-modeline doom-themes
+			 eshell-git-prompt eterm-256color
+			 evil-collection evil-nerd-commenter forge
+			 general helpful ivy-prescient ivy-rich
+			 lsp-ivy lsp-java lsp-ui no-littering ob-go
+			 ob-rust ob-sql-mode ob-typescript org-bullets
+			 org-roam-dailies org-roam-ui python-mode
+			 pyvenv rainbow-delimiters rust-mode
+			 typescript-mode visual-fill-column vterm)))
+(custom-set-faces
+ ;; custom-set-faces was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ )
