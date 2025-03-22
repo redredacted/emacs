@@ -1,6 +1,3 @@
-(eval-when-compile
-  (require 'use-package))
-
 ;; The default is 800 kilobytes.  Measured in bytes.
 (setq gc-cons-threshold (* 50 1000 1000))
 
@@ -83,6 +80,7 @@
 (dolist (mode '(org-mode-hook
                 term-mode-hook
                 shell-mode-hook
+		vterm-mode-hook
 		treemacs-mode-hook
                 eshell-mode-hook))
   (add-hook mode (lambda () (display-line-numbers-mode 0))))
@@ -90,13 +88,7 @@
 (use-package command-log-mode
   :commands command-log-mode)
 
-;; NOTE: The first time you load your configuration on a new machine, you'll
-;; need to run the following command interactively so that mode line icons
-;; display correctly:
-;;
-;; M-x all-the-icons-install-fonts
-
-(use-package all-the-icons)
+(use-package nerd-icons)
 
 (use-package doom-modeline
   :init (doom-modeline-mode 1)
@@ -186,6 +178,7 @@
   (setq evil-want-keybinding nil)
   (setq evil-want-C-u-scroll t)
   (setq evil-want-C-i-jump nil)
+  (setq evil-undo-system 'undo-redo)
   :config
   (evil-mode 1)
   (define-key evil-insert-state-map (kbd "C-g") 'evil-normal-state)
@@ -222,14 +215,22 @@
 
 (use-package projectile
   :diminish projectile-mode
-  :config (projectile-mode)
+  :config
+  (setq projectile-project-search-path '(("~/Projects" . 1))
+	projectile-auto-discover nil
+	projectile-indexing-method 'alien
+	projectile-enable-caching t
+	projectile-auto-update-cache t
+	projectile-auto-update-cache nil
+	projectile-file-exists-remote-cache-expire (* 10 60)
+	projectile-create-cache-if-non-existent nil
+	projectile-require-project-root t
+	projecctile-sort-order 'default)
+  (projectile-mode)
   :custom ((projectile-completion-system 'ivy))
   :bind-keymap
-  ("C-c p" . projectile-command-map)
-  :init
-  (when (file-directory-p "~/Projects")
-    (setq projectile-project-search-path '("~/Projects")))
-  (setq projectile-switch-project-action #'projectile-dired))
+  ("C-c p" . projectile-command-map))
+
 
 (use-package counsel-projectile
   :after projectile
@@ -248,6 +249,18 @@
   (variable-pitch-mode 1)
   (auto-fill-mode 0)
   (visual-line-mode 1))
+
+(setq org-startup-with-latex-preview t)
+
+;; Ensure that LaTeX preview is updated after saving an Org file
+(add-hook 'org-mode-hook
+          (lambda ()
+            (add-hook 'after-save-hook #'org-preview-latex-fragment nil t))) ;; `t` ensures it is buffer-local
+
+;; Set LaTeX preview scale
+(with-eval-after-load 'org
+  (setq org-format-latex-options
+        (plist-put org-format-latex-options :scale 2.5)))
 
 (defun efs/org-font-setup ()
   ;; Replace list hyphen with dot
@@ -513,12 +526,30 @@
     :prefix lsp-keymap-prefix
     "d" '(dap-hydra t :wk "debugger")))
 
+(use-package powershell
+  :hook (powershell-mode . lsp-deferred))
+
+(use-package yaml-mode
+  :mode "\\.yaml\\'"
+  :hook (yaml-mode . lsp-deferred)
+  :config
+  (setq lsp-yaml-schema-store-uri "https://www.schemastore.org/api/json/catalog.json"))
+
 (use-package typescript-mode
   :mode "\\.ts\\'"
   :hook (typescript-mode . lsp-deferred)
   :config
   (setq typescript-indent-level 2))
 
+(use-package groovy-mode)
+(use-package jenkinsfile-mode
+  :mode ("Jenkinsfile" . jenkinsfile-mode)
+  :config
+  (setq jenkinsfile-mode-syntax-checking t))
+
+(use-package go-mode
+  :mode "\\.go\\'"
+  :hook (go-mode . lsp-deferred))
 
 (use-package python-mode
   :ensure t
@@ -550,7 +581,7 @@
           "-Xmx2G"
           "-XX:+UseG1GC"
           "-XX:+UseStringDeduplication"
-          ,(concat "-javaagent:" (expand-file-name "~/.m2/repository/org/projectlombok/lombok/1.18.32/lombok.1.18.32.jar")))))
+          ,(concat "-javaagent:" (expand-file-name "~/.m2/repository/org/projectlombok/lombok/1.18.32/lombok-1.18.32.jar")))))
 
 (use-package rust-mode
   :mode "\\.rs\\'"
@@ -588,7 +619,7 @@
   :commands vterm
   :config
   (setq term-prompt-regexp "^[^#$%>\n]*[#$%>] *")  ;; Set this to match your custom shell prompt
-  ;;(setq vterm-shell "zsh")                       ;; Set this to customize the shell to launch
+  (setq vterm-shell "zsh")                       ;; Set this to customize the shell to launch
   (setq vterm-max-scrollback 10000))
 
 (when (eq system-type 'windows-nt)
@@ -661,18 +692,7 @@
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(package-selected-packages
-   '(all-the-icons-dired auto-package-update command-log-mode company-box
-			 counsel-projectile dired-hide-dotfiles
-			 dired-open doom-modeline doom-themes
-			 eshell-git-prompt eterm-256color
-			 evil-collection evil-nerd-commenter forge
-			 general helpful ivy-prescient ivy-rich
-			 lsp-ivy lsp-java lsp-ui no-littering ob-go
-			 ob-rust ob-sql-mode ob-typescript org-bullets
-			 org-roam-dailies org-roam-ui python-mode
-			 pyvenv rainbow-delimiters rust-mode
-			 typescript-mode visual-fill-column vterm)))
+ '(package-selected-packages nil))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
