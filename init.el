@@ -686,6 +686,20 @@
   (evil-collection-define-key 'normal 'dired-mode-map
     "H" 'dired-hide-dotfiles-mode))
 
+(use-package gptel
+  :config
+  (setq gptel-default-mode 'org-mode)
+  (setq gptel-model 'openai/gpt-3.5-turbo)
+  (setq gptel-backend
+	(gptel-make-openai "litellm"
+	  :protocol "http"
+	  :host "localhost:4000"
+	  :key "sk-TtY8pqhSNoHV7U_4LoASdA"
+	  :stream t
+	  :models '(
+		    "openai/gpt-3.5-turbo"
+		    ))))
+  
 (setq gc-cons-threshold (* 2 1000 1000))
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
