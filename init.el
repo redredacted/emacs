@@ -1,12 +1,31 @@
 ;; The default is 800 kilobytes.  Measured in bytes.
 (setq gc-cons-threshold (* 50 1000 1000))
 
+(defvar bootstrap-version)
+(let ((bootstrap-file
+       (expand-file-name
+        "straight/repos/straight.el/bootstrap.el"
+        (or (bound-and-true-p straight-base-dir)
+            user-emacs-directory)))
+      (bootstrap-version 7))
+  (unless (file-exists-p bootstrap-file)
+    (with-current-buffer
+        (url-retrieve-synchronously
+         "https://raw.githubusercontent.com/radian-software/straight.el/develop/install.el"
+         'silent 'inhibit-cookies)
+      (goto-char (point-max))
+      (eval-print-last-sexp)))
+  (load bootstrap-file nil 'nomessage))
+
 (defun efs/display-startup-time ()
   (message "Emacs loaded in %s with %d garbage collections."
            (format "%.2f seconds"
                    (float-time
                      (time-subtract after-init-time before-init-time)))
            gcs-done))
+
+(setq straight-use-package-by-default t)
+(straight-use-package 'use-package)
 
 (add-hook 'emacs-startup-hook #'efs/display-startup-time)
 
@@ -33,24 +52,6 @@
 
 ;; Make ESC quit prompts
 (global-set-key (kbd "<escape>") 'keyboard-escape-quit)
-
-;; Initialize package sources
-(require 'package)
-
-(setq package-archives '(("melpa" . "https://melpa.org/packages/")
-                         ("org" . "https://orgmode.org/elpa/")
-                         ("elpa" . "https://elpa.gnu.org/packages/")))
-
-(package-initialize)
-(unless package-archive-contents
- (package-refresh-contents))
-
-;; Initialize use-package on non-Linux platforms
-(unless (package-installed-p 'use-package)
-   (package-install 'use-package))
-
-(require 'use-package)
-(setq use-package-always-ensure t)
 
 (use-package auto-package-update
   :custom
@@ -170,6 +171,7 @@
   (rune/leader-keys
     "t"  '(:ignore t :which-key "toggles")
     "tt" '(counsel-load-theme :which-key "choose theme")
+    "ff" '(projectile-find-file :which-key "find file")
     "fde"  '(lambda () (interactive) (find-file (expand-file-name "~/.emacs.d/init.el")))))
 
 (use-package evil
@@ -280,7 +282,7 @@
     (set-face-attribute (car face) nil :font "Cantarell" :weight 'regular :height (cdr face)))
 
   ;; Ensure that anything that should be fixed-pitch in Org files appears that way
-  (set-face-attribute 'org-block nil :foreground nil :inherit 'fixed-pitch)
+  (set-face-attribute 'org-block nil :foreground 'unspecified :inherit 'fixed-pitch)
   (set-face-attribute 'org-code nil   :inherit '(shadow fixed-pitch))
   (set-face-attribute 'org-table nil   :inherit '(shadow fixed-pitch))
   (set-face-attribute 'org-verbatim nil :inherit '(shadow fixed-pitch))
@@ -289,7 +291,6 @@
   (set-face-attribute 'org-checkbox nil :inherit 'fixed-pitch))
 
 (use-package org
-  :pin org
   :commands (org-capture org-agenda)
   :hook (org-mode . efs/org-mode-setup)
   :config
@@ -529,6 +530,11 @@
 (use-package powershell
   :hook (powershell-mode . lsp-deferred))
 
+(use-package beancount-mode
+  :straight (beancount-mode :type git :host github :repo "beancount/beancount-mode")
+  :mode "\\.beancount\\'"
+  :hook (beancount-mode . lsp-deferred))
+
 (use-package yaml-mode
   :mode "\\.yaml\\'"
   :hook (yaml-mode . lsp-deferred)
@@ -658,6 +664,7 @@
 
 
 (use-package dired
+  :straight nil
   :ensure nil
   :commands (dired dired-jump)
   :bind (("C-x C-j" . dired-jump))
@@ -706,7 +713,20 @@
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(package-selected-packages nil))
+ '(package-selected-packages
+   '(all-the-icons-dired auto-package-update beancount command-log-mode
+			 company-box counsel-projectile
+			 dired-hide-dotfiles dired-open doom-modeline
+			 doom-themes eshell-git-prompt eterm-256color
+			 evil-collection evil-nerd-commenter forge
+			 general go-mode gptel helpful ivy-prescient
+			 ivy-rich jenkinsfile-mode lsp-ivy lsp-java
+			 lsp-ui no-littering ob-go ob-rust ob-sql-mode
+			 ob-typescript org-bullets org-roam-ui
+			 powershell python-mode pyvenv
+			 quelpa-use-package rainbow-delimiters
+			 rust-mode typescript-mode visual-fill-column
+			 vterm yaml-mode)))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
