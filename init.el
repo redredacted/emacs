@@ -193,6 +193,12 @@
   (evil-set-initial-state 'messages-buffer-mode 'normal)
   (evil-set-initial-state 'dashboard-mode 'normal))
 
+(use-package evil-textobj-tree-sitter
+  :config
+  (define-key evil-outer-text-objects-map "f" (evil-textobj-tree-sitter-textobj "function.outer"))
+  (define-key evil-inner-text-objects-map "f" (evil-textobj-tree-sitter-textobj "function.inner"))
+  (define-key evil-outer-text-objects-map "a" (evil-textobj-tree-sitter-textobj ("conditional.outer" "loop.outer"))))
+
 (use-package evil-collection
   :after evil
   :config
@@ -527,7 +533,20 @@
     :prefix lsp-keymap-prefix
     "d" '(dap-hydra t :wk "debugger")))
 
+(use-package docker
+  :bind ("C-c d" . docker))
+
+(use-package kubernetes)
+
+(use-package treesit-auto
+  :custom
+  (treesit-auto-install 'prompt)
+  :config
+  (treesit-auto-add-to-auto-mode-alist 'all)
+  (global-treesit-auto-mode))
+
 (use-package powershell
+  :mode "\\.ps\\'"
   :hook (powershell-mode . lsp-deferred))
 
 (use-package beancount-mode
@@ -537,13 +556,18 @@
 
 (use-package yaml-mode
   :mode "\\.yaml\\'"
-  :hook (yaml-mode . lsp-deferred)
+  :hook ((yaml-mode . lsp-deferred)
+	 (yaml-ts-mode . lsp-deferred))
   :config
   (setq lsp-yaml-schema-store-uri "https://www.schemastore.org/api/json/catalog.json"))
 
+(use-package jq-mode)
+
 (use-package typescript-mode
-  :mode "\\.ts\\'"
-  :hook (typescript-mode . lsp-deferred)
+  :mode "\\.ts[x]?\\'"
+  :hook ((typescript-mode . lsp-deferred)
+	 (typescript-ts-mode . lsp-deferred)
+	 (tsx-ts-mode . lsp-deferred))
   :config
   (setq typescript-indent-level 2))
 
@@ -555,11 +579,13 @@
 
 (use-package go-mode
   :mode "\\.go\\'"
-  :hook (go-mode . lsp-deferred))
+  :hook ((go-mode . lsp-deferred)
+	 (go-ts-mode . lsp-deferred))
 
 (use-package python-mode
   :ensure t
-  :hook (python-mode . lsp-deferred)
+  :hook ((python-mode . lsp-deferred)
+	 (python-ts-mode . lsp-deferred))
   :custom
   ;; NOTE: Set these if Python 3 is called "python3" on your system!
   ;; (python-shell-interpreter "python3")
@@ -574,7 +600,8 @@
   (pyvenv-mode 1))
 
 (use-package lsp-java
-  :hook (java-mode . lsp-deferred)
+  :hook ((java-mode . lsp-deferred)
+	 (java-ts-mode . lsp-deferred))
   :config
   (require 'lsp-java-boot)
   ;; to enable the lenses
@@ -591,7 +618,8 @@
 
 (use-package rust-mode
   :mode "\\.rs\\'"
-  :hook (rust-mode . lsp-deferred)
+  :hook ((rust-mode . lsp-deferred)
+	 (rust-ts-mode . lsp-deferred))
   :config
   (setq rust-format-on-save t))  ;; Auto-format Rust on save
 
