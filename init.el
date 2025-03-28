@@ -195,9 +195,9 @@
 
 (use-package evil-textobj-tree-sitter
   :config
-  (define-key evil-outer-text-objects-map "f" (evil-textobj-tree-sitter-textobj "function.outer"))
-  (define-key evil-inner-text-objects-map "f" (evil-textobj-tree-sitter-textobj "function.inner"))
-  (define-key evil-outer-text-objects-map "a" (evil-textobj-tree-sitter-textobj ("conditional.outer" "loop.outer"))))
+  (define-key evil-outer-text-objects-map "f" (evil-textobj-tree-sitter-get-textobj "function.outer"))
+  (define-key evil-inner-text-objects-map "f" (evil-textobj-tree-sitter-get-textobj "function.inner"))
+  (define-key evil-outer-text-objects-map "a" (evil-textobj-tree-sitter-get-textobj ("conditional.outer" "loop.outer"))))
 
 (use-package evil-collection
   :after evil
