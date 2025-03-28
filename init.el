@@ -580,7 +580,7 @@
 (use-package go-mode
   :mode "\\.go\\'"
   :hook ((go-mode . lsp-deferred)
-	 (go-ts-mode . lsp-deferred))
+	 (go-ts-mode . lsp-deferred)))
 
 (use-package python-mode
   :ensure t
