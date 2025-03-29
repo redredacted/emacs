@@ -109,6 +109,7 @@
 
 (use-package doom-modeline
   :init (doom-modeline-mode 1)
+  :after nerd-icons
   :custom ((doom-modeline-height 15)))
 
 (use-package doom-themes
@@ -314,9 +315,60 @@
   (set-face-attribute 'org-checkbox nil :inherit 'fixed-pitch))
 
 (use-package org
+  :straight `(org
+              :fork (:host nil
+			   :repo "https://git.tecosaur.net/tec/org-mode.git"
+			   :branch "dev"
+			   :remote "tecosaur")
+              :files (:defaults "etc")
+              :build t
+              :pre-build
+              (with-temp-file "org-version.el"
+		(require 'lisp-mnt)
+		(let ((version
+                       (with-temp-buffer
+                         (insert-file-contents "lisp/org.el")
+                         (lm-header "version")))
+                      (git-version
+                       (string-trim
+			(with-temp-buffer
+                          (call-process "git" nil t nil "rev-parse" "--short" "HEAD")
+                          (buffer-string)))))
+                  (insert
+                   (format "(defun org-release () \"The release version of Org.\" %S)\n" version)
+                   (format "(defun org-git-version () \"The truncate git commit hash of Org mode.\" %S)\n" git-version)
+                   "(provide 'org-version)\n")))
+              :pin nil)
   :commands (org-capture org-agenda)
   :hook (org-mode . efs/org-mode-setup)
   :config
+  (plist-put org-latex-preview-appearance-options
+             :page-width 0.8)
+
+  ;; ;; Use dvisvgm to generate previews
+  ;; ;; You don't need this, it's the default:
+  ;; (setq org-latex-preview-process-default 'dvisvgm)
+  
+  ;; Turn on auto-mode, it's built into Org and much faster/more featured than
+  ;; org-fragtog. (Remember to turn off/uninstall org-fragtog.)
+  (add-hook 'org-mode-hook 'org-latex-preview-auto-mode)
+
+  ;; ;; Block C-n, C-p etc from opening up previews when using auto-mode
+  ;; (setq org-latex-preview-auto-ignored-commands
+  ;;       '(next-line previous-line mwheel-scroll
+  ;;         scroll-up-command scroll-down-command))
+
+  ;; ;; Enable consistent equation numbering
+  ;; (setq org-latex-preview-numbered t)
+
+  ;; Bonus: Turn on live previews.  This shows you a live preview of a LaTeX
+  ;; fragment and updates the preview in real-time as you edit it.
+  ;; To preview only environments, set it to '(block edit-special) instead
+  (setq org-latex-preview-live t)
+
+  ;; More immediate live-previews -- the default delay is 1 second
+  (setq org-latex-preview-live-debounce 0.25)
+  ;;end org-preview-auto
   (setq org-ellipsis " ▾"
 	org-hide-emphasis-markers t)
 
@@ -840,6 +892,9 @@
   :straight (:host github :repo "karthink/gptel" :branch "master")
   :config
   (setq gptel-default-mode 'org-mode)
+  (setq gptel-use-tools t)
+  (setq gptel-track-media t)
+  (setq gptel-include-tool-results t)
   (setq gptel-expert-commands t)
   (gptel-make-perplexity "Perplexity"
     :key (lambda () (my/auth-get "api.perplexity.com" "apikey"))
@@ -847,39 +902,83 @@
   (gptel-make-anthropic "Anthropic"
     :key (lambda () (my/auth-get "api.anthropic.com" "apikey"))
     :stream t)
+  (gptel-make-gemini "Google"
+    :key (lambda () (my/auth-get "api.google.com" "apikey"))
+    :stream t)
+  (gptel-make-openai "Groq"
+    :host "api.groq.com"
+    :endpoint "/openai/v1/chat/completions"
+    :stream t
+    :key (lambda () (my/auth-get "api.groq.com" "apikey"))
+    :models '(llama-3.1-70b-versatile
+              llama-3.1-8b-instant
+              llama3-70b-8192
+              llama3-8b-8192
+              mixtral-8x7b-32768
+              gemma-7b-it
+	      deepseek-r1-distill-llama-70b))
   (gptel-make-openai "xAI"
     :host "api.x.ai"
     :key (lambda () (my/auth-get "api.grok.com" "apikey"))
     :endpoint "v1/chat/completions"
     :stream t
     :models '(grok-beta))
-  (gptel-make-tool
-   :name "read_buffer"                    ; javascript-style snake_case name
-   :function (lambda (buffer)                  ; the function that will run
-               (unless (buffer-live-p (get-buffer buffer))
-		 (error "error: buffer %s is not live." buffer))
-               (with-current-buffer  buffer
-		 (buffer-substring-no-properties (point-min) (point-max))))
-   :description "return the contents of an emacs buffer"
-   :args (list '(:name "buffer"
-		       :type string            ; :type value must be a symbol
-		       :description "the name of the buffer whose contents are to be retrieved"))
-   :category "emacs")                     ; An arbitrary label for grouping
-  (gptel-make-tool
-   :name "list_active_buffers"                 ; Define the tool's name in snake_case
-   :function (lambda ()                        ; The function that will run
-               (let ((buffer-list (buffer-list))
-                     (output '()))
-		 (dolist (buf buffer-list)
-                   (when (buffer-live-p buf)
-                     (let ((name (buffer-name buf))
-                           (mod (if (buffer-modified-p buf) "*" " ")))
-                       (push (format "%s %s" mod name) output))))
-		 (reverse output)))
-   :description "List all active buffers with their names and statuses"
-   :args nil                                   ; No arguments needed for this function
-   :category "emacs")
-  )
+  (setq gptel-tools
+	(list
+	 (gptel-make-tool
+	  :name "read_buffer"                    ; javascript-style snake_case name
+	  :function (lambda (buffer)                  ; the function that will run
+		      (unless (buffer-live-p (get-buffer buffer))
+			(error "error: buffer %s is not live." buffer))
+		      (with-current-buffer  buffer
+			(buffer-substring-no-properties (point-min) (point-max))))
+	  :description "return the contents of an emacs buffer"
+	  :args (list '(:name "buffer"
+			      :type string            ; :type value must be a symbol
+			      :description "the name of the buffer whose contents are to be retrieved"))
+
+	  :category "emacs")                     ; An arbitrary label for grouping
+	 (gptel-make-tool
+	  :name "elisp_eval"
+	  :function (lambda (expression)
+		      (format "%S" (eval (read expression))))
+	  :confirm t
+	  :include t
+	  :category "introspection"
+	  :args '((:name "expression"
+			 :type string
+			 :description "A single elisp expression to evaluate."))
+	  :description "Evaluate Elisp EXPRESSION and return result.
+EXPRESSION can be any valid Elisp sexp. The return value is formatted as a string with %S."
+	  )
+	 
+	 (gptel-make-tool
+	  :name "documentation"
+	  :function (lambda (symbol)
+                      (if (intern-soft symbol)
+			  (documentation (intern symbol))
+			"nil"))
+	  :include t
+	  :category "introspection"
+	  :args '((:name "symbol"
+			 :type string
+			 :description "Name of the function or variable you want documentation for."))
+	  :description "Retrieve the documentation for SYMBOL."
+	  )
+	 (gptel-make-tool
+	  :name "list_active_buffers"                 ; Define the tool's name in snake_case
+	  :function (lambda ()                        ; The function that will run
+		      (let ((buffer-list (buffer-list))
+			    (output '()))
+			(dolist (buf buffer-list)
+			  (when (buffer-live-p buf)
+			    (let ((name (buffer-name buf))
+				  (mod (if (buffer-modified-p buf) "*" " ")))
+			      (push (format "%s %s" mod name) output))))
+			(reverse output)))
+	  :description "List all active buffers with their names and statuses"
+	  :args nil                                   ; No arguments needed for this function
+	  :category "emacs"))))
 
 (use-package elfeed
   :ensure t
