@@ -896,6 +896,7 @@
   (setq gptel-track-media t)
   (setq gptel-include-tool-results t)
   (setq gptel-expert-commands t)
+  (setq gptel-model 'gpt-4o-mini)
   (gptel-make-perplexity "Perplexity"
     :key (lambda () (my/auth-get "api.perplexity.com" "apikey"))
     :stream t)
