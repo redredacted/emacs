@@ -30,8 +30,26 @@
 (add-hook 'emacs-startup-hook #'efs/display-startup-time)
 
 ;; You will most likely need to adjust this font size for your system!
-(defvar runemacs/default-font-size 180)
-(defvar efs/default-variable-font-size 180)
+(defvar runemacs/default-font "Fira Code Retina"
+  "Default font face.")
+
+(defvar runemacs/default-font-size 140
+  "Default font size in 1/10 pt.")
+
+(defun runemacs/set-default-font (frame)
+  "Set the default font in GUI frames."
+  (when (display-graphic-p frame)
+    (with-selected-frame frame
+      (set-face-attribute 'default nil
+                          :font runemacs/default-font
+                          :height runemacs/default-font-size))))
+
+;; Apply to currently running GUI session (non-daemon)
+(when (display-graphic-p)
+  (runemacs/set-default-font (selected-frame)))
+
+;; Also apply to *all* future GUI frames (daemon or not)
+(add-hook 'after-make-frame-functions #'runemacs/set-default-font)
 
 (setq inhibit-startup-message t)
 
@@ -47,8 +65,6 @@
 
 ;; Set up the visible bell
 (setq visible-bell t)
-
-(set-face-attribute 'default nil :font "Fira Code Retina" :height runemacs/default-font-size)
 
 ;; Make ESC quit prompts
 (global-set-key (kbd "<escape>") 'keyboard-escape-quit)
@@ -96,7 +112,8 @@
   :custom ((doom-modeline-height 15)))
 
 (use-package doom-themes
-  :init (load-theme 'doom-gruvbox t))
+  :init
+  (load-theme 'doom-gruvbox t))
 
 (use-package rainbow-delimiters
   :hook (prog-mode . rainbow-delimiters-mode))
@@ -721,20 +738,157 @@
   (evil-collection-define-key 'normal 'dired-mode-map
     "H" 'dired-hide-dotfiles-mode))
 
+(use-package direnv
+  :config
+  (direnv-mode)
+  :custom
+  (direnv-always-show-summary t)  ;; Show summary message when directory changes
+  (direnv-show-paths-in-summary t) ;; Show affected paths in summary
+  (direnv-use-faces-in-summary t)) ;; Color the summary
+
+(use-package ligature
+  :config
+  ;; Enable the "www" ligature in every possible major mode
+  (ligature-set-ligatures 't '("www"))
+  ;; Enable traditional ligature support in eww-mode, if the
+  ;; `variable-pitch' face supports it
+  (ligature-set-ligatures 'eww-mode '("ff" "fi" "ffi"))
+  ;; Enable all Cascadia and Fira Code ligatures in programming modes
+  (ligature-set-ligatures 'prog-mode
+                        '(;; == === ==== => =| =>>=>=|=>==>> ==< =/=//=// =~
+                          ;; =:= =!=
+                          ("=" (rx (+ (or ">" "<" "|" "/" "~" ":" "!" "="))))
+                          ;; ;; ;;;
+                          (";" (rx (+ ";")))
+                          ;; && &&&
+                          ("&" (rx (+ "&")))
+                          ;; !! !!! !. !: !!. != !== !~
+                          ("!" (rx (+ (or "=" "!" "\." ":" "~"))))
+                          ;; ?? ??? ?:  ?=  ?.
+                          ("?" (rx (or ":" "=" "\." (+ "?"))))
+                          ;; %% %%%
+                          ("%" (rx (+ "%")))
+                          ;; |> ||> |||> ||||> |] |} || ||| |-> ||-||
+                          ;; |->>-||-<<-| |- |== ||=||
+                          ;; |==>>==<<==<=>==//==/=!==:===>
+                          ("|" (rx (+ (or ">" "<" "|" "/" ":" "!" "}" "\]"
+                                          "-" "=" ))))
+                          ;; \\ \\\ \/
+                          ("\\" (rx (or "/" (+ "\\"))))
+                          ;; ++ +++ ++++ +>
+                          ("+" (rx (or ">" (+ "+"))))
+                          ;; :: ::: :::: :> :< := :// ::=
+                          (":" (rx (or ">" "<" "=" "//" ":=" (+ ":"))))
+                          ;; // /// //// /\ /* /> /===:===!=//===>>==>==/
+                          ("/" (rx (+ (or ">"  "<" "|" "/" "\\" "\*" ":" "!"
+                                          "="))))
+                          ;; .. ... .... .= .- .? ..= ..<
+                          ("\." (rx (or "=" "-" "\?" "\.=" "\.<" (+ "\."))))
+                          ;; -- --- ---- -~ -> ->> -| -|->-->>->--<<-|
+                          ("-" (rx (+ (or ">" "<" "|" "~" "-"))))
+                          ;; *> */ *)  ** *** ****
+                          ("*" (rx (or ">" "/" ")" (+ "*"))))
+                          ;; www wwww
+                          ("w" (rx (+ "w")))
+                          ;; <> <!-- <|> <: <~ <~> <~~ <+ <* <$ </  <+> <*>
+                          ;; <$> </> <|  <||  <||| <|||| <- <-| <-<<-|-> <->>
+                          ;; <<-> <= <=> <<==<<==>=|=>==/==//=!==:=>
+                          ;; << <<< <<<<
+                          ("<" (rx (+ (or "\+" "\*" "\$" "<" ">" ":" "~"  "!"
+                                          "-"  "/" "|" "="))))
+                          ;; >: >- >>- >--|-> >>-|-> >= >== >>== >=|=:=>>
+                          ;; >> >>> >>>>
+                          (">" (rx (+ (or ">" "<" "|" "/" ":" "=" "-"))))
+                          ;; #: #= #! #( #? #[ #{ #_ #_( ## ### #####
+                          ("#" (rx (or ":" "=" "!" "(" "\?" "\[" "{" "_(" "_"
+                                       (+ "#"))))
+                          ;; ~~ ~~~ ~=  ~-  ~@ ~> ~~>
+                          ("~" (rx (or ">" "=" "-" "@" "~>" (+ "~"))))
+                          ;; __ ___ ____ _|_ __|____|_
+                          ("_" (rx (+ (or "_" "|"))))
+                          ;; Fira code: 0xFF 0x12
+                          ("0" (rx (and "x" (+ (in "A-F" "a-f" "0-9")))))
+                          ;; Fira code:
+                          "Fl"  "Tl"  "fi"  "fj"  "fl"  "ft"
+                          ;; The few not covered by the regexps.
+                          "{|"  "[|"  "]#"  "(*"  "}#"  "$>"  "^="))
+  ;; Enables ligature checks globally in all buffers. You can also do it
+  ;; per mode with `ligature-mode'.
+  (global-ligature-mode t))
+
+(use-package age
+  :demand t
+  :custom
+  (age-program "rage")
+  :config
+  (setq age-default-identity "~/.ssh/id_ed25519")
+  (setq age-default-recipient "~/.ssh/id_ed25519.pub")
+  (age-file-enable))
+
+(when (daemonp)
+  (age-file-enable)) ;; just in case it didn’t run earlier
+
+(setq auth-sources '("~/.authinfo.age"))
+
+(defun my/auth-get (host user)
+  (let ((entry (car (auth-source-search :host host :user user :max 1))))
+    (when entry
+      (let ((secret (plist-get entry :secret)))
+        (if (functionp secret) (funcall secret) secret)))))
+
 (use-package gptel
+  :straight (:host github :repo "karthink/gptel" :branch "master")
   :config
   (setq gptel-default-mode 'org-mode)
-  (setq gptel-model 'openai/gpt-3.5-turbo)
-  (setq gptel-backend
-	(gptel-make-openai "litellm"
-	  :protocol "http"
-	  :host "localhost:4000"
-	  :key "sk-TtY8pqhSNoHV7U_4LoASdA"
-	  :stream t
-	  :models '(
-		    "openai/gpt-3.5-turbo"
-		    ))))
-  
+  (setq gptel-expert-commands t)
+  (gptel-make-perplexity "Perplexity"
+    :key (lambda () (my/auth-get "api.perplexity.com" "apikey"))
+    :stream t)
+  (gptel-make-anthropic "Anthropic"
+    :key (lambda () (my/auth-get "api.anthropic.com" "apikey"))
+    :stream t)
+  (gptel-make-openai "xAI"
+    :host "api.x.ai"
+    :key (lambda () (my/auth-get "api.grok.com" "apikey"))
+    :endpoint "v1/chat/completions"
+    :stream t
+    :models '(grok-beta))
+  (gptel-make-tool
+   :name "read_buffer"                    ; javascript-style snake_case name
+   :function (lambda (buffer)                  ; the function that will run
+               (unless (buffer-live-p (get-buffer buffer))
+		 (error "error: buffer %s is not live." buffer))
+               (with-current-buffer  buffer
+		 (buffer-substring-no-properties (point-min) (point-max))))
+   :description "return the contents of an emacs buffer"
+   :args (list '(:name "buffer"
+		       :type string            ; :type value must be a symbol
+		       :description "the name of the buffer whose contents are to be retrieved"))
+   :category "emacs")                     ; An arbitrary label for grouping
+  (gptel-make-tool
+   :name "list_active_buffers"                 ; Define the tool's name in snake_case
+   :function (lambda ()                        ; The function that will run
+               (let ((buffer-list (buffer-list))
+                     (output '()))
+		 (dolist (buf buffer-list)
+                   (when (buffer-live-p buf)
+                     (let ((name (buffer-name buf))
+                           (mod (if (buffer-modified-p buf) "*" " ")))
+                       (push (format "%s %s" mod name) output))))
+		 (reverse output)))
+   :description "List all active buffers with their names and statuses"
+   :args nil                                   ; No arguments needed for this function
+   :category "emacs")
+  )
+
+(use-package elfeed
+  :ensure t
+  :bind
+  ("C-x w" . elfeed)
+  :config
+  (setq elfeed-feeds
+        '("https://karthinks.com/index.xml")))
+
 (setq gc-cons-threshold (* 2 1000 1000))
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
@@ -759,5 +913,6 @@
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
+
  ;; If there is more than one, they won't work right.
  )
