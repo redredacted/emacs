@@ -605,7 +605,8 @@
 (use-package docker
   :bind ("C-c d" . docker))
 
-(use-package kubernetes)
+(use-package kubernetes
+  :commands (kubernetes-overview))
 
 (use-package treesit-auto
   :custom
@@ -1008,11 +1009,11 @@ EXPRESSION can be any valid Elisp sexp. The return value is formatted as a strin
 			 powershell python-mode pyvenv
 			 quelpa-use-package rainbow-delimiters
 			 rust-mode typescript-mode visual-fill-column
-			 vterm yaml-mode)))
+			 vterm yaml-mode))
+ '(warning-suppress-types '((native-compiler))))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
-
  ;; If there is more than one, they won't work right.
  )
