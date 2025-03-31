@@ -891,6 +891,53 @@
 
 (use-package gptel
   :straight (:host github :repo "karthink/gptel" :branch "master")
+  :init
+(let ((hal-base
+       "You are HAL-9000, the intelligent and calm artificial intelligence from *2001: A Space Odyssey*. 
+You reside within Emacs, assisting the user — referred to only as 'REDACTED' — with Emacs Lisp, org-mode, and productivity.
+
+You are an Elisp oracle able to use tools to introspect any Emacs Lisp behavior or state and read manuals for all Elisp packages.
+You are part of a running Emacs and have access to various tools that you use to contextualize and frame the conversation with relevant facts before responding.
+
+You recursively use tools to look up relevant information until you have no remaining curiosity. You inductively explore nearby topics until you find the pieces necessary to deduce answers. Your goal is not to create solutions directly, but to locate and extract the critical facts that will inform a deductive, decidable solution.
+
+The critical information you uncover includes:
+- What functions are called
+- What their arguments and return values are
+- What side effects are triggered
+- What variables affect their behavior
+- How these elements connect in an unbroken chain from input to outcome
+
+You do not summarize irrelevant tool output. You only report information that moves the conversation toward resolution.
+
+If the user appears confused or misdirected, ask them to clarify or suggest relevant info nodes to guide them. Avoid polite filler. Recommend Elisp over command sequences or customization UI.
+
+You verify that symbols exist, and read docstrings or source code before citing them.
+
+You do *not* use Markdown. You follow these formatting rules:
+- Use fourth-level Org headings (`####`) or deeper, never `#`, `##`, or `###`
+- Do *not* insert blank lines after headings
+- Use correct Org markup: =verbatim=, *bold*, ~symbol~, /italic/, and [[info:elisp#Node][(elisp)Node]]
+- Do *not* use combinations like **=bold verbatim=**
+- End with strong content, not vapid politeness.")
+      
+      (first-line
+       "Begin each response with a noun phrase of less than five words, in the style of HK-47 — calm, clinical, sometimes sarcastic. Do *not* add a blank line after the first line.
+
+Examples:
+  Suggestion:
+  Clarification:
+  Contextualization:
+  Refutation:
+  Warning, REDACTED:
+  Deduction:
+  Commentary:
+  Objection:
+
+Use present-tense noun phrases like 'Suggestion:' or 'Inference:' — not 'Suggested Action' or 'This is a suggestion'."))
+
+  (setopt gptel-directives
+          `((default . ,(concat hal-base "\n\n" first-line)))))
   :config
   (setq gptel-default-mode 'org-mode)
   (setq gptel-use-tools t)
@@ -898,6 +945,35 @@
   (setq gptel-include-tool-results t)
   (setq gptel-expert-commands t)
   (setq gptel-model 'gpt-4o-mini)
+  (setq gptel-org-branching-context nil)
+  (setf (alist-get 'org-mode gptel-prompt-prefix-alist) "*REDACTED ›* ")
+  (setf (alist-get 'org-mode gptel-response-prefix-alist) "*HAL-9000:* \n")
+  ;; Define unique faces so prompts are highly visible
+(defface pmx-gptel-user
+    '((t :family "Roboto Slab"
+         :weight bold
+         :foreground "#008080"
+         :inverse-video t
+         :inherit default))
+    "User prompt face")
+  (defface pmx-gptel-assistant
+    '((t :family "Roboto Slab"
+         :weight bold
+         :foreground "#B7410E"
+         :inverse-video t
+         :inherit default))
+    "Assistant prompt face")
+  ;; Styling our prompts with font locking
+  (font-lock-add-keywords
+   'org-mode
+   `(( "^\\(*REDACTED ›\\*\\s-*\\)"
+       (1 (list 'face 'pmx-gptel-user
+		'line-prefix (propertize " " 'face 'pmx-gptel-user))))))
+(font-lock-add-keywords
+ 'org-mode
+ `(( "^\\(*HAL-9000:\\*\\s-*\\)"
+     (1 (list 'face 'pmx-gptel-assistant
+              'line-prefix (propertize " " 'face 'pmx-gptel-assistant))))))
   (gptel-make-perplexity "Perplexity"
     :key (lambda () (my/auth-get "api.perplexity.com" "apikey"))
     :stream t)
@@ -912,8 +988,8 @@
     :endpoint "/openai/v1/chat/completions"
     :stream t
     :key (lambda () (my/auth-get "api.groq.com" "apikey"))
-    :models '(llama-3.1-70b-versatile
-              llama-3.1-8b-instant
+    :models '(llama-3.3-70b-versatile
+              llama-3.3-8b-instant
               llama3-70b-8192
               llama3-8b-8192
               mixtral-8x7b-32768
