@@ -267,8 +267,8 @@
   :custom
   (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1))
 
-(use-package forge
-  :after magit)
+;; TODO: lazy load without errors
+(use-package forge)
 
 (defun efs/org-mode-setup ()
   (org-indent-mode)
