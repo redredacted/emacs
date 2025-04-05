@@ -268,7 +268,9 @@
   (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1))
 
 ;; TODO: lazy load without errors
-(use-package forge)
+(use-package forge
+  :defer t
+  :after magit)
 
 (defun efs/org-mode-setup ()
   (org-indent-mode)
@@ -969,11 +971,15 @@ Use present-tense noun phrases like 'Suggestion:' or 'Inference:' — not 'Sugge
    `(( "^\\(*REDACTED ›\\*\\s-*\\)"
        (1 (list 'face 'pmx-gptel-user
 		'line-prefix (propertize " " 'face 'pmx-gptel-user))))))
-(font-lock-add-keywords
- 'org-mode
- `(( "^\\(*HAL-9000:\\*\\s-*\\)"
-     (1 (list 'face 'pmx-gptel-assistant
-              'line-prefix (propertize " " 'face 'pmx-gptel-assistant))))))
+  (font-lock-add-keywords
+   'org-mode
+   `(( "^\\(*HAL-9000:\\*\\s-*\\)"
+       (1 (list 'face 'pmx-gptel-assistant
+		'line-prefix (propertize " " 'face 'pmx-gptel-assistant))))))
+  (gptel-make-ollama "Ollama"
+    :host "localhost:11434"
+    :stream t
+    :models'(mistral:latest gemma:12b deepseek-r1:latest))
   (gptel-make-perplexity "Perplexity"
     :key (lambda () (my/auth-get "api.perplexity.com" "apikey"))
     :stream t)
@@ -1065,6 +1071,8 @@ EXPRESSION can be any valid Elisp sexp. The return value is formatted as a strin
   :config
   (setq elfeed-feeds
         '("https://karthinks.com/index.xml")))
+(use-package emojify
+  :hook (after-init . global-emojify-mode))
 
 (setq gc-cons-threshold (* 2 1000 1000))
 (custom-set-variables
