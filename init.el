@@ -979,7 +979,7 @@ Use present-tense noun phrases like 'Suggestion:' or 'Inference:' — not 'Sugge
   (gptel-make-ollama "Ollama"
     :host "localhost:11434"
     :stream t
-    :models'(mistral:latest gemma:12b deepseek-r1:latest))
+    :models'(mistral:latest gemma3:12b deepseek-r1:latest))
   (gptel-make-perplexity "Perplexity"
     :key (lambda () (my/auth-get "api.perplexity.com" "apikey"))
     :stream t)
@@ -995,12 +995,12 @@ Use present-tense noun phrases like 'Suggestion:' or 'Inference:' — not 'Sugge
     :stream t
     :key (lambda () (my/auth-get "api.groq.com" "apikey"))
     :models '(llama-3.3-70b-versatile
-              llama-3.3-8b-instant
               llama3-70b-8192
               llama3-8b-8192
-              mixtral-8x7b-32768
-              gemma-7b-it
-	      deepseek-r1-distill-llama-70b))
+	      mistral-saba-24b
+              gemma2-9b-it
+	      deepseek-r1-distill-llama-70b
+	      meta-llama/llama-4-scout-17b-16e-instruct))
   (gptel-make-openai "xAI"
     :host "api.x.ai"
     :key (lambda () (my/auth-get "api.grok.com" "apikey"))
