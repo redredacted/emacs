@@ -1062,7 +1062,24 @@ EXPRESSION can be any valid Elisp sexp. The return value is formatted as a strin
 			(reverse output)))
 	  :description "List all active buffers with their names and statuses"
 	  :args nil                                   ; No arguments needed for this function
-	  :category "emacs"))))
+	  :category "emacs")
+	 (gptel-make-tool
+	  :name "list_org_roam_nodes"                 ; Define the tool's name in snake_case
+	  :function (lambda ()
+		      (require 'org-roam)
+		      (org-roam--get-titles))
+	  :description "List all my org-roam node titles"
+	  :category "org")
+	 (gptel-make-tool
+	  :name "list_elfeed_titles"                 ; Define the tool's name in snake_case
+	  :function (lambda ()
+		      (require 'elfeed)
+		      (require 'elfeed-db)
+		      (mapcar (lambda (entry)
+				(elfeed-entry-title entry))
+			      (hash-table-values elfeed-db-entries)))
+	  :description "A crude crappy elfeed dump for rss titles"
+	  :category "elfee"))))
 
 (use-package elfeed
   :ensure t
@@ -1071,6 +1088,7 @@ EXPRESSION can be any valid Elisp sexp. The return value is formatted as a strin
   :config
   (setq elfeed-feeds
         '("https://karthinks.com/index.xml")))
+
 (use-package emojify
   :hook (after-init . global-emojify-mode))
 
