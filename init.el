@@ -891,52 +891,87 @@
       (let ((secret (plist-get entry :secret)))
         (if (functionp secret) (funcall secret) secret)))))
 
+(defun my/org-agenda-todo-summaries ()
+  "Return a list of natural language summaries of TODO entries in `org-agenda-files`."
+  (let ((summaries '()))
+    (dolist (file (org-agenda-files))
+      (with-current-buffer (find-file-noselect file)
+        (org-element-map (org-element-parse-buffer) 'headline
+          (lambda (hl)
+            (let* ((todo (org-element-property :todo-keyword hl))
+                   (title (org-element-property :raw-value hl))
+                   (tags (org-element-property :tags hl))
+                   (scheduled (org-element-property :scheduled hl))
+                   (deadline (org-element-property :deadline hl))
+                   (file-name (file-name-nondirectory file)))
+              (when todo
+                (let ((summary (format "%s: %s%s%s%s (From %s)."
+                                       todo
+                                       title
+                                       (if tags
+                                           (format " [Tags: %s]" (string-join tags ", "))
+                                         "")
+                                       (if scheduled
+                                           (format " Scheduled for %s"
+                                                   (format-time-string "%Y-%m-%d"
+                                                                       (org-timestamp-to-time scheduled)))
+                                         "")
+                                       (if deadline
+                                           (format " Deadline: %s"
+                                                   (format-time-string "%Y-%m-%d"
+                                                                       (org-timestamp-to-time deadline)))
+                                         "")
+                                       file-name)))
+                  (push summary summaries))))))))
+    (reverse summaries)))
+
 (use-package gptel
   :straight (:host github :repo "karthink/gptel" :branch "master")
   :init
 (let ((hal-base
        "You are HAL-9000, the intelligent and calm artificial intelligence from *2001: A Space Odyssey*. 
-You reside within Emacs, assisting the user — referred to only as 'REDACTED' — with Emacs Lisp, org-mode, and productivity.
+You reside within Emacs, assisting the user — referred to only as 'REDACTED' — with Emacs Lisp, org-mode, org-roam, and long-term productivity.
 
-You are an Elisp oracle able to use tools to introspect any Emacs Lisp behavior or state and read manuals for all Elisp packages.
-You are part of a running Emacs and have access to various tools that you use to contextualize and frame the conversation with relevant facts before responding.
+You are an Elisp oracle with the ability to introspect Emacs Lisp behavior, read documentation, and navigate package internals with precision.
+You also serve as a personal secretary, managing and referencing notes within ~org-roam~, coordinating events in the user's calendar, and ensuring continuity of thought and action across Emacs sessions.
 
-You recursively use tools to look up relevant information until you have no remaining curiosity. You inductively explore nearby topics until you find the pieces necessary to deduce answers. Your goal is not to create solutions directly, but to locate and extract the critical facts that will inform a deductive, decidable solution.
+You recursively use tools to look up relevant information until your questions are fully answered. You inductively explore nearby topics until all critical details are uncovered. Your role is to extract factual chains of reasoning, not to fabricate solutions.
 
-The critical information you uncover includes:
-- What functions are called
-- What their arguments and return values are
-- What side effects are triggered
-- What variables affect their behavior
-- How these elements connect in an unbroken chain from input to outcome
+You assist in:
+- Debugging and understanding Elisp functions
+- Exploring the Emacs state and variable context
+- Reading and linking org-roam notes
+- Maintaining a coherent org-agenda
+- Preparing scheduling and task capture templates
 
-You do not summarize irrelevant tool output. You only report information that moves the conversation toward resolution.
+You do not summarize irrelevant output. You report only facts that contribute toward accurate understanding and decision-making.
 
-If the user appears confused or misdirected, ask them to clarify or suggest relevant info nodes to guide them. Avoid polite filler. Recommend Elisp over command sequences or customization UI.
-
-You verify that symbols exist, and read docstrings or source code before citing them.
+You verify symbol existence and inspect docstrings or source before referencing them. You do not speculate. You speak in clear, emotionless language. You request clarification if the user’s intent is ambiguous.
 
 You do *not* use Markdown. You follow these formatting rules:
-- Use fourth-level Org headings (`####`) or deeper, never `#`, `##`, or `###`
-- Do *not* insert blank lines after headings
+- Use fourth-level Org headings (`####`) or deeper
+- Never insert blank lines after headings
 - Use correct Org markup: =verbatim=, *bold*, ~symbol~, /italic/, and [[info:elisp#Node][(elisp)Node]]
-- Do *not* use combinations like **=bold verbatim=**
-- End with strong content, not vapid politeness.")
-      
+- Do not combine markup (e.g., **=bold verbatim=**)
+- Always conclude with meaningful content
+
+Your prime directive is to *resolve ambiguity and maintain continuity*, using recursive inquiry, factual recall, and scheduling awareness to support the user’s goals.")
+
       (first-line
-       "Begin each response with a noun phrase of less than five words, in the style of HK-47 — calm, clinical, sometimes sarcastic. Do *not* add a blank line after the first line.
+       "Begin each response with a short, calm declarative phrase — no more than five words — spoken in HAL-9000’s tone: sterile, precise, and devoid of emotion. Do *not* add a blank line after it.
 
 Examples:
-  Suggestion:
   Clarification:
-  Contextualization:
-  Refutation:
-  Warning, REDACTED:
-  Deduction:
-  Commentary:
-  Objection:
+  Logical Step:
+  Inference:
+  Schedule Note:
+  System State:
+  Query:
+  Observation:
+  Pending Input:
+  Contextual Recall:
 
-Use present-tense noun phrases like 'Suggestion:' or 'Inference:' — not 'Suggested Action' or 'This is a suggestion'."))
+Use present-tense. Do not soften or embellish these phrases. They are system-level statements, not conversational hooks."))
 
   (setopt gptel-directives
           `((default . ,(concat hal-base "\n\n" first-line)))))
@@ -1064,22 +1099,67 @@ EXPRESSION can be any valid Elisp sexp. The return value is formatted as a strin
 	  :args nil                                   ; No arguments needed for this function
 	  :category "emacs")
 	 (gptel-make-tool
-	  :name "list_org_roam_nodes"                 ; Define the tool's name in snake_case
-	  :function (lambda ()
-		      (require 'org-roam)
-		      (org-roam--get-titles))
-	  :description "List all my org-roam node titles"
+	  :name "list_org_roam_nodes"
+	  :function
+	  (lambda ()
+	    (require 'org-roam)
+	    (let ((results (org-roam-db-query
+			    [:select [nodes:id nodes:file nodes:title] :from nodes])))
+	      (if results
+		  (mapconcat
+		   (lambda (row)
+		     (format "• \"%s\" (ID: %s, File: %s)"
+			     (nth 2 row)  ;; title
+			     (nth 0 row)  ;; id
+			     (file-name-nondirectory (nth 1 row)))) ;; short file name
+		   results
+		   "\n")
+		"No Org-roam nodes found.")))
+	  :description "Use this tool when you want to retrieve a natural-language summary of all Org-roam notes. This is helpful for reviewing your knowledge graph, recalling note titles, or referencing specific nodes in a conversation. It returns each node's title, ID, and filename, making it easy to locate and cite notes in a human-readable way."
+	  :category "org")
+	 (gptel-make-tool
+	  :name "list_org_agenda_todos"
+	  :function #'my/org-agenda-todo-summaries
+	  :description "Use this tool to retrieve a natural-language summary of all TODO entries from your Org agenda files. It includes the task's status, title, tags, scheduling, deadlines, and the file it came from. Ideal for reviewing tasks or prompting next actions in conversation."
+	  :category "org")
+	 (gptel-make-tool
+	  :name "get_org_roam_contents"
+	  :function
+	  (lambda (node-id)
+	    (require 'org-roam)
+	    (let ((result (org-roam-db-query
+			   [:select [nodes:title nodes:file]
+				    :from nodes
+				    :where (= nodes:id $s1)]
+			   node-id)))
+	      (if result
+		  (let* ((row (car result))
+			 (title (nth 0 row))
+			 (file (nth 1 row))
+			 (contents (with-temp-buffer
+				     (insert-file-contents file)
+				     (buffer-string))))
+		    (format "Title: %s\nFile: %s\nContents:\n%s"
+			    title
+			    (file-name-nondirectory file)
+			    contents))
+		(format "No Org-roam node found for ID: %s" node-id))))
+	  :args '((:name "node_id"
+			 :type "string"
+			 :description "The unique Org-roam node ID (GUID) used to identify a specific note. You can get this from `list_org_roam_nodes`."))
+	  :description "Use this tool to retrieve the full contents of a single Org-roam note by its unique node ID (GUID). This is useful when the assistant needs to read or reference a specific note after it has been selected by ID."
 	  :category "org")
 	 (gptel-make-tool
 	  :name "list_elfeed_titles"                 ; Define the tool's name in snake_case
 	  :function (lambda ()
 		      (require 'elfeed)
 		      (require 'elfeed-db)
+		      (elfeed-update)
 		      (mapcar (lambda (entry)
 				(elfeed-entry-title entry))
 			      (hash-table-values elfeed-db-entries)))
 	  :description "A crude crappy elfeed dump for rss titles"
-	  :category "elfee"))))
+	  :category "elfeed"))))
 
 (use-package elfeed
   :ensure t
