@@ -284,6 +284,7 @@
 (add-hook 'org-mode-hook
           (lambda ()
             (add-hook 'after-save-hook #'org-preview-latex-fragment nil t))) ;; `t` ensures it is buffer-local
+(add-hook 'org-babel-after-execute-hook #'org-redisplay-inline-images)
 
 ;; Set LaTeX preview scale
 (with-eval-after-load 'org
@@ -316,6 +317,8 @@
   (set-face-attribute 'org-meta-line nil :inherit '(font-lock-comment-face fixed-pitch))
   (set-face-attribute 'org-checkbox nil :inherit 'fixed-pitch))
 
+
+;; should load first may cause issue on clean install otherwise
 (use-package org
   :straight `(org
               :fork (:host nil
@@ -344,6 +347,7 @@
   :commands (org-capture org-agenda)
   :hook (org-mode . efs/org-mode-setup)
   :config
+  (setq org-startup-with-inline-images t)
   (plist-put org-latex-preview-appearance-options
              :page-width 0.8)
 
@@ -532,6 +536,7 @@
 (use-package ob-go)
 (use-package ob-sql-mode)
 (use-package ob-typescript)
+(use-package ob-d2)
 
 (org-babel-do-load-languages
   'org-babel-load-languages
@@ -544,6 +549,7 @@
     (shell . t)
     (rust . t)
     (go . t)
+    (d2 . t)
     (java . t)))
 
 (push '("conf-unix" . conf-unix) org-src-lang-modes)
@@ -560,6 +566,7 @@
 (add-to-list 'org-structure-template-alist '("ts" . "src typescript"))
 (add-to-list 'org-structure-template-alist '("sq" . "src sql"))
 (add-to-list 'org-structure-template-alist '("la" . "src latex"))
+(add-to-list 'org-structure-template-alist '("d2" . "src d2"))
 (add-to-list 'org-structure-template-alist '("el" . "src emacs-lisp"))
 (add-to-list 'org-structure-template-alist '("py" . "src python"))
 
