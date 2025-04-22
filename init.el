@@ -85,7 +85,7 @@
 (use-package exec-path-from-shell
   :if (memq window-system '(mac ns x))
   :config
-  (exec-path-from-shell-initialized))
+  (exec-path-from-shell-initialize))
 
 (use-package no-littering)
 
@@ -147,7 +147,7 @@
          ("C-k" . ivy-previous-line)
          ("C-d" . ivy-reverse-i-search-kill))
   :config
-  (setq completion-styles '(orderles basic))
+  (setq completion-styles '(orderless basic))
   (ivy-mode 1))
 
 (use-package ivy-rich
@@ -919,6 +919,18 @@
       (let ((secret (plist-get entry :secret)))
         (if (functionp secret) (funcall secret) secret)))))
 
+;; (use-package smudge
+;;   ;; :straight (:host github :repo "redredacted/smudge" :branch "mp-defconst")
+;;   :straight (:local-repo "~/Projects/smudge")
+;;   :bind-keymap ("C-c ." . smudge-command-map)
+;;   :custom
+;;   (smudge-oauth2-client-id (my/auth-get "api.spotify.com" "spotify-client-id"))
+;;   (smudge-oauth2-client-secret (my/auth-get "api.spotify.com" "spotify-client-secret"))
+;;   (smudge-oauth2-callback-endpoint "/smudge")
+;;   (smudge-player-use-transient-map t)
+;;   :config
+;;   (global-smudge-remote-mode))
+
 (defun my/org-agenda-todo-summaries ()
   "Return a list of natural language summaries of TODO entries in `org-agenda-files`."
   (let ((summaries '()))
@@ -1035,7 +1047,7 @@ Use present-tense. Do not soften or embellish these phrases. They are system-lev
   (setq gptel-track-media t)
   (setq gptel-include-tool-results t)
   (setq gptel-expert-commands t)
-  (setq gptel-model 'gpt-4o-mini)
+  (setq gptel-model 'gpt-4.1-mini)
   (setq gptel-org-branching-context nil)
   (setf (alist-get 'org-mode gptel-prompt-prefix-alist) "*REDACTED ›* ")
   (setf (alist-get 'org-mode gptel-response-prefix-alist) "*HAL-9000:* \n")
@@ -1596,6 +1608,26 @@ docstring next and finally try to complete the prefix of the symbol .")
 	  :description "Use this tool to retrieve the full contents of a single Org-roam note by its unique node ID (GUID). This is useful when the assistant needs to read or reference a specific note after it has been selected by ID."
 	  :category "org")
 	 (gptel-make-tool
+	  :name "mpv_play"
+	  :function (lambda (url)
+		      (mpv-play-url url))
+	  :include t
+	  :category "media"
+	  :args '((:name "url"
+			 :type string
+			 :description "URL of the video to play with mpv."))
+	  :description "Use this to play youtube urls on user request or just to rickroll them")
+	 (gptel-make-tool
+	  :name "mpv_set_volume"
+	  :function (lambda (factor)
+		      (mpv-volume-set factor))
+	  :include t
+	  :category "media"
+	  :args '((:name "factor"
+			 :type number
+			 :description "Volume level to set (integer value, e.g., 0 to 100)."))
+	  :description "Set the playback volume in MPV as an integer (0 to 100).")
+	 (gptel-make-tool
 	  :name "list_elfeed_titles"                 ; Define the tool's name in snake_case
 	  :function (lambda ()
 		      (require 'elfeed)
@@ -1617,6 +1649,21 @@ docstring next and finally try to complete the prefix of the symbol .")
 
 (use-package emojify
   :hook (after-init . global-emojify-mode))
+
+(use-package mpv
+  :straight (mpv :host github :repo "kljohann/mpv.el")
+  :config
+  (setq mpv-start-timeout 5)
+  (setq mpv-input-ipc-server "/tmp/mpvsocket")
+  ;; Org integration
+  (org-link-set-parameters "https"
+    :follow (lambda (path _)
+              (let ((url (concat "https://" path)))
+                (if (string-match "youtube\\.com\\|youtu\\.be" url)
+                    (mpv-play-url url)
+                  (browse-url url))))))
+
+;; (mpv-play-url "https://youtube.com/watch?v=dQw4w9WgXcQ")
 
 (setq gc-cons-threshold (* 2 1000 1000))
 (custom-set-variables
