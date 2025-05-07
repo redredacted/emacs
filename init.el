@@ -664,7 +664,7 @@
 (use-package jq-mode)
 
 (use-package typescript-mode
-  :mode "\\.ts[x]?\\'"
+  :mode "\\.[jt]s[x]?\\'"
   :hook ((typescript-mode . lsp-deferred)
 	 (typescript-ts-mode . lsp-deferred)
 	 (tsx-ts-mode . lsp-deferred))
@@ -1646,6 +1646,15 @@ docstring next and finally try to complete the prefix of the symbol .")
   :config
   (setq elfeed-feeds
         '("https://karthinks.com/index.xml")))
+
+(use-package yasnippet
+  :ensure t
+  :hook (prog-mode . yas-minor-mode)
+  :config
+  (yas-reload-all))
+
+(use-package yasnippet-snippets
+  :after yasnippet)
 
 (use-package emojify
   :hook (after-init . global-emojify-mode))
