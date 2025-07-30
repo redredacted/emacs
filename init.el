@@ -101,6 +101,7 @@
 ;; Disable line numbers for some modes
 (dolist (mode '(org-mode-hook
                 term-mode-hook
+		devdocs-mode-hook
                 shell-mode-hook
 		vterm-mode-hook
 		treemacs-mode-hook
@@ -204,7 +205,7 @@
   (setq evil-want-integration t)
   (setq evil-want-keybinding nil)
   (setq evil-want-C-u-scroll t)
-  (setq evil-want-C-i-jump nil)
+  (setq evil-want-C-i-jump t)
   (setq evil-undo-system 'undo-redo)
   :config
   (evil-mode 1)
@@ -250,15 +251,15 @@
   :diminish projectile-mode
   :config
   (setq projectile-project-search-path '(("~/Projects" . 1))
-	projectile-auto-discover nil
+	projectile-auto-discover t
 	projectile-indexing-method 'alien
 	projectile-enable-caching t
 	projectile-auto-update-cache t
-	projectile-auto-update-cache nil
 	projectile-file-exists-remote-cache-expire (* 10 60)
-	projectile-create-cache-if-non-existent nil
+	projectile-create-cache-if-non-existent t
 	projectile-require-project-root t
-	projecctile-sort-order 'default)
+	projectile-sort-order 'default)
+  (projectile-discover-projects-in-search-path)
   (projectile-mode)
   :custom ((projectile-completion-system 'ivy))
   :bind-keymap
@@ -991,6 +992,14 @@ Returns the source code as a string, or nil if the definition is not found."
 
 (use-package orderless)
 
+(use-package mcp
+  :after gptel
+  :custom (mcp-hub-servers
+	   '(("filesystem" . (:command "npx" :args ("-y" "@modelcontextprotocol/server-filesystem" "~/Projects/mcp_sandbox/")))))
+  :config (require 'mcp-hub)
+  (require 'gptel-integrations)
+  :hook (after-init . mcp-hub-start-all-server))
+
 (use-package gptel
   :straight (:host github :repo "karthink/gptel" :branch "master")
   :init
@@ -1671,6 +1680,19 @@ docstring next and finally try to complete the prefix of the symbol .")
                 (if (string-match "youtube\\.com\\|youtu\\.be" url)
                     (mpv-play-url url)
                   (browse-url url))))))
+
+
+(use-package edraw
+  :straight (edraw :host github :repo "misohena/el-easydraw")
+  :after org
+  :config
+  (with-eval-after-load 'org
+    (require 'edraw-org)
+    (edraw-org-setup-default)
+    (edraw-org-link-image-mode))
+  (with-eval-after-load "ox"
+    (require 'edraw-org)
+    (edraw-org-setup-exporter)))
 
 ;; (mpv-play-url "https://youtube.com/watch?v=dQw4w9WgXcQ")
 
