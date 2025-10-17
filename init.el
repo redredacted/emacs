@@ -365,7 +365,7 @@
   
   ;; Turn on auto-mode, it's built into Org and much faster/more featured than
   ;; org-fragtog. (Remember to turn off/uninstall org-fragtog.)
-  (add-hook 'org-mode-hook 'org-latex-preview-auto-mode)
+  (add-hook 'org-mode-hook 'org-latex-preview-mode)
 
   ;; ;; Block C-n, C-p etc from opening up previews when using auto-mode
   ;; (setq org-latex-preview-auto-ignored-commands
@@ -379,6 +379,13 @@
   ;; fragment and updates the preview in real-time as you edit it.
   ;; To preview only environments, set it to '(block edit-special) instead
   (setq org-latex-preview-live t)
+
+  ;; More math stuff units and stuff i just  added it all because why not
+  (setq org-latex-packages-alist '(("" "amsmath" t)
+				   ("" "amssymb" t)
+				   ("" "mathtools" t)
+				   ("" "physics" t)
+				   ("" "siunitx" t)))
 
   ;; More immediate live-previews -- the default delay is 1 second
   (setq org-latex-preview-live-debounce 0.25)
@@ -571,7 +578,12 @@
     (go . t)
     (d2 . t)
     (mermaid . t)
+    (gnuplot . t)
     (java . t)))
+
+(use-package gnuplot
+    :ensure t)
+
 
 (push '("conf-unix" . conf-unix) org-src-lang-modes)
 
@@ -599,9 +611,21 @@
 (use-package lsp-mode
   :commands (lsp lsp-deferred)
   :hook (lsp-mode . efs/lsp-mode-setup)
+  :hook ((c-mode c-ts-mode c++--mode c++-ts-mode c-or-c++-mode c-or-c++-mode) . lsp-deferred)
   :init
   (setq lsp-keymap-prefix "C-c l")  ;; Or 'C-l', 's-l'
   :config
+  (setq c-basic-offset 8
+	indent-tabs-mode t
+	c-default-style "linux")
+  (setq lsp-enable-file-watchers nil
+	lsp-idle-delay 0.5
+	lsp-client-clangd-args
+	'("--background-index"
+	  "--clang-tidy"
+	  "--header-insertion=never"
+	  "--completion-style=detailed"))
+  (setq lsp-auto-guess-root t)
   (lsp-enable-which-key-integration t))
 
 (use-package lsp-ui
@@ -726,9 +750,11 @@
 
 (use-package company
   :after lsp-mode
-  :hook (lsp-mode . company-mode)
+  :hook ((lsp-mode emacs-lisp-mode lisp-interaction-mode) . company-mode)
   :bind (:map company-active-map
          ("<tab>" . company-complete-selection))
+	(:map emacs-lisp-mode-map
+	 ("<tab>" . completion-at-point))
         (:map lsp-mode-map
          ("<tab>" . company-indent-or-complete-common))
   :custom
@@ -744,7 +770,7 @@
 (use-package term
   :commands term
   :config
-  (setq explicit-shell-file-name "bash")
+  (setq explicit-shell-file-name "/bin/bash")
   (setq term-prompt-regexp "^[^#$%>\n]*[#$%>] *"))
 
 (use-package eterm-256color
@@ -754,7 +780,7 @@
   :commands vterm
   :config
   (setq term-prompt-regexp "^[^#$%>\n]*[#$%>] *")  ;; Set this to match your custom shell prompt
-  (setq vterm-shell "zsh")                       ;; Set this to customize the shell to launch
+  (setq vterm-shell "/bin/bash")                       ;; Set this to customize the shell to launch
   (setq vterm-max-scrollback 10000))
 
 (when (eq system-type 'windows-nt)
